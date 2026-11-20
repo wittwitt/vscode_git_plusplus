@@ -1,0 +1,95 @@
+{
+  "name": "git-plus-plus",
+  "displayName": "Git ++",
+  "description": "Browse Git branches, tags, and commit history in VS Code.",
+  "version": "0.1.7",
+  "publisher": "wittwitt",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wittwitt/vscode_git_plusplus.git"
+  },
+  "icon": "media/git-plus-plus.png",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["SCM Providers"],
+  "main": "./src/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": { "supported": false }
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "gitPlusPlus", "title": "Git ++", "icon": "media/git-plus-plus-activity.svg" }
+      ]
+    },
+    "views": {
+      "gitPlusPlus": [
+        { "id": "gitPlusPlus.refs", "name": "Git ++", "type": "webview", "icon": "media/git-plus-plus-activity.svg" }
+      ]
+    },
+    "taskDefinitions": [
+      {
+        "type": "gitPlusPlus",
+        "required": ["repository", "action"],
+        "properties": {
+          "repository": { "type": "string" },
+          "action": { "type": "string" }
+        }
+      }
+    ],
+    "commands": [
+      { "command": "gitPlusPlus.openGraph", "title": "Open Commit Graph (git log)", "category": "Git ++", "icon": "$(git-commit)" },
+      { "command": "gitPlusPlus.refresh", "title": "Refresh", "category": "Git ++", "icon": "media/git-refresh.svg" },
+      { "command": "gitPlusPlus.switchBranch", "title": "Switch Branch", "category": "Git ++" },
+      { "command": "gitPlusPlus.deleteBranch", "title": "Delete Branch", "category": "Git ++", "enablement": "!gitPlusPlusBranchCurrent" },
+      { "command": "gitPlusPlus.deleteRemoteBranch", "title": "Delete Remote Branch…", "category": "Git ++" },
+      { "command": "gitPlusPlus.switchRemoteBranch", "title": "Switch to Local Branch", "category": "Git ++" },
+      { "command": "gitPlusPlus.pullBranch", "title": "git pull", "category": "Git ++" },
+      { "command": "gitPlusPlus.pushBranch", "title": "git push", "category": "Git ++" },
+      { "command": "gitPlusPlus.deleteTag", "title": "Delete Tag…", "category": "Git ++" },
+      { "command": "gitPlusPlus.createCommitBranch", "title": "Create Branch…", "category": "Git ++" },
+      { "command": "gitPlusPlus.addCommitTag", "title": "Add Tag…", "category": "Git ++" },
+      { "command": "gitPlusPlus.checkoutCommit", "title": "Checkout…", "category": "Git ++" },
+      { "command": "gitPlusPlus.revertCommit", "title": "Revert…", "category": "Git ++" },
+      { "command": "gitPlusPlus.cherryPickCommit", "title": "Cherry-pick…", "category": "Git ++" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "gitPlusPlus.openGraph", "when": "view == gitPlusPlus.refs", "group": "navigation@1" },
+        { "command": "gitPlusPlus.refresh", "when": "view == gitPlusPlus.refs", "group": "navigation@2" }
+      ],
+      "webview/context": [
+        { "command": "gitPlusPlus.openGraph", "when": "webviewId == gitPlusPlus.refs && webviewSection == repository" },
+        { "command": "gitPlusPlus.switchBranch", "when": "webviewId == gitPlusPlus.refs && webviewSection == localBranch", "group": "navigation@1" },
+        { "command": "gitPlusPlus.deleteBranch", "when": "webviewId == gitPlusPlus.refs && webviewSection == localBranch", "group": "navigation@2" },
+        { "command": "gitPlusPlus.deleteRemoteBranch", "when": "webviewId == gitPlusPlus.refs && webviewSection == remoteBranch", "group": "navigation@1" },
+        { "command": "gitPlusPlus.switchRemoteBranch", "when": "webviewId == gitPlusPlus.refs && webviewSection == remoteBranch", "group": "navigation@2" },
+        { "command": "gitPlusPlus.pullBranch", "when": "webviewId == gitPlusPlus.refs && webviewSection =~ /^(localBranch|remoteBranch)$/", "group": "2_sync@1" },
+        { "command": "gitPlusPlus.pushBranch", "when": "webviewId == gitPlusPlus.refs && webviewSection =~ /^(localBranch|remoteBranch)$/", "group": "2_sync@2" },
+        { "command": "gitPlusPlus.deleteTag", "when": "webviewId == gitPlusPlus.refs && webviewSection == tag", "group": "navigation@1" },
+        { "command": "gitPlusPlus.createCommitBranch", "when": "webviewId == gitPlusPlus.graph && webviewSection == commit", "group": "1_refs@1" },
+        { "command": "gitPlusPlus.addCommitTag", "when": "webviewId == gitPlusPlus.graph && webviewSection == commit", "group": "1_refs@2" },
+        { "command": "gitPlusPlus.checkoutCommit", "when": "webviewId == gitPlusPlus.graph && webviewSection == commit", "group": "2_worktree@1" },
+        { "command": "gitPlusPlus.revertCommit", "when": "webviewId == gitPlusPlus.graph && webviewSection == commit", "group": "2_worktree@2" },
+        { "command": "gitPlusPlus.cherryPickCommit", "when": "webviewId == gitPlusPlus.graph && webviewSection == commit", "group": "2_worktree@3" }
+      ],
+      "commandPalette": [
+        { "command": "gitPlusPlus.switchBranch", "when": "false" },
+        { "command": "gitPlusPlus.deleteBranch", "when": "false" },
+        { "command": "gitPlusPlus.deleteRemoteBranch", "when": "false" },
+        { "command": "gitPlusPlus.switchRemoteBranch", "when": "false" },
+        { "command": "gitPlusPlus.pullBranch", "when": "false" },
+        { "command": "gitPlusPlus.pushBranch", "when": "false" },
+        { "command": "gitPlusPlus.deleteTag", "when": "false" },
+        { "command": "gitPlusPlus.createCommitBranch", "when": "false" },
+        { "command": "gitPlusPlus.addCommitTag", "when": "false" },
+        { "command": "gitPlusPlus.checkoutCommit", "when": "false" },
+        { "command": "gitPlusPlus.revertCommit", "when": "false" },
+        { "command": "gitPlusPlus.cherryPickCommit", "when": "false" }
+      ]
+    }
+  },
+  "scripts": {
+    "check": "node --check src/extension.js && node --check src/git.js && node --check src/gitRepositories.js && node --check src/branchFilter.js && node --check src/branchColors.js && node --check src/sidebar.js && node --check media/graph.js && node --check media/changedFiles.js && node --check media/sidebar.js",
+    "test": "node --test"
+  }
+}

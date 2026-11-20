@@ -1,0 +1,412 @@
+html, body { height: 100%; }
+
+body {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 4px 0;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-sideBar-foreground, var(--vscode-foreground));
+  background: var(--vscode-sideBar-background);
+}
+
+[hidden] { display: none !important; }
+
+.sidebar-pane {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  min-height: 0;
+  user-select: none;
+}
+
+.sidebar-pane + .sidebar-pane {
+  border-top: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border));
+}
+
+.sidebar-pane.expanded { flex: 1 1 0; }
+
+.sidebar-pane > h2 {
+  flex: none;
+  margin: 0;
+  font-size: inherit;
+}
+
+.sidebar-pane > h2 > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 24px;
+  padding: 2px 8px;
+  border: 0;
+  color: var(--vscode-sideBarSectionHeader-foreground, var(--vscode-foreground));
+  background: var(--vscode-sideBarSectionHeader-background, transparent);
+  font-weight: 600;
+  text-align: start;
+}
+
+#toggle-refs {
+  background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
+}
+
+#toggle-files:hover { background: var(--vscode-list-hoverBackground); }
+
+.sidebar-pane > h2 > button::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-bottom: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.sidebar-pane > h2 > button[aria-expanded="true"]::before { transform: rotate(45deg); }
+
+.sidebar-pane-body { flex: 1 1 auto; min-height: 0; }
+
+#refs-pane { overflow: auto; }
+
+#commit-files {
+  display: flex;
+  flex-direction: column;
+}
+
+#diff-files { flex: 1; min-height: 0; overflow: auto; }
+
+.diff-file-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+  padding: 4px 8px;
+}
+
+#diff-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diff-layout {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--vscode-contrastBorder, var(--vscode-panel-border, transparent));
+  border-radius: 5px;
+}
+
+.diff-layout button {
+  display: grid;
+  place-items: center;
+  inline-size: 27px;
+  block-size: 24px;
+  padding: 0;
+  color: var(--vscode-foreground);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+
+.diff-layout button:hover { background: var(--vscode-toolbar-hoverBackground); }
+.diff-layout button[aria-pressed="true"] {
+  background: var(--vscode-toolbar-activeBackground, var(--vscode-list-inactiveSelectionBackground));
+  border-color: var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
+}
+
+.diff-layout svg { inline-size: 18px; block-size: 18px; }
+.diff-list-lines { stroke: var(--vscode-charts-blue, currentColor); }
+.diff-list-bullets { fill: var(--vscode-charts-purple, currentColor); }
+.diff-tree-folder { stroke: var(--vscode-charts-yellow, currentColor); }
+.diff-tree-branches { stroke: var(--vscode-charts-foreground, currentColor); }
+.diff-tree-files { stroke: var(--vscode-charts-green, currentColor); }
+
+.diff-file-status {
+  flex: none;
+  min-width: 1em;
+  text-align: center;
+  color: var(--vscode-gitDecoration-modifiedResourceForeground, inherit);
+}
+.diff-file-status[data-status="A"] { color: var(--vscode-gitDecoration-addedResourceForeground, inherit); }
+.diff-file-status[data-status="D"] { color: var(--vscode-gitDecoration-deletedResourceForeground, inherit); }
+.diff-file-status[data-status="R"] { color: var(--vscode-gitDecoration-renamedResourceForeground, inherit); }
+
+#repositories {
+  --ref-tree-step: 16px;
+  user-select: none;
+}
+
+button { font: inherit; cursor: pointer; }
+
+button:focus-visible,
+summary:focus-visible,
+input[type="checkbox"]:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  padding: 0 8px 0 12px;
+}
+
+#repositories .row { column-gap: 0; }
+#repositories .children { padding-inline-start: var(--ref-tree-step); }
+#repositories :is(.repository, .ref-group) > .children { padding-inline-start: 0; }
+
+#repositories .repository > summary > .label {
+  margin-inline-start: var(--ref-tree-step);
+}
+
+.ref-disclosure {
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--ref-tree-step);
+}
+
+.ref-group {
+  margin: 4px 8px 6px;
+  border: 1px solid var(--vscode-contrastBorder, var(--vscode-panel-border));
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+#repositories .ref-group > summary {
+  column-gap: 4px;
+  min-height: 26px;
+  background: color-mix(in srgb, var(--vscode-sideBar-foreground, var(--vscode-foreground)) 9%, transparent);
+  font-weight: 600;
+}
+
+.ref-group > summary > .ref-disclosure {
+  order: 1;
+  margin-inline-start: auto;
+}
+
+.ref-group > .children {
+  padding-block-end: 3px;
+}
+
+.ref-group-empty {
+  color: var(--vscode-descriptionForeground);
+}
+
+.tag-search {
+  box-sizing: border-box;
+  width: calc(100% - 16px);
+  margin: 5px 8px 3px;
+  padding: 3px 6px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: 3px;
+  font: inherit;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  user-select: text;
+}
+
+.tag-search:focus-visible { outline: 1px solid var(--vscode-focusBorder); }
+.tag-search::placeholder { color: var(--vscode-input-placeholderForeground); }
+.tag-search[aria-invalid="true"] { border-color: var(--vscode-inputValidation-errorBorder); }
+.tag-search-status { color: var(--vscode-descriptionForeground); }
+.tag-search-status:empty { display: none; }
+.tag-search[aria-invalid="true"] + .tag-search-status { color: var(--vscode-errorForeground); }
+
+.repository > summary { font-weight: 600; }
+details + .repository { margin-top: 4px; }
+.children { padding-inline-start: 10px; }
+
+summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+summary::-webkit-details-marker { display: none; }
+summary::before,
+.ref-disclosure::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 2px;
+  border-bottom: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  transform: rotate(-45deg);
+  flex-shrink: 0;
+}
+
+#repositories summary::before { content: none; }
+.ref-disclosure::before { margin-inline-end: 0; }
+
+details[open] > summary::before,
+details[open] > summary > .ref-disclosure::before { transform: rotate(45deg); }
+
+.ref {
+  width: 100%;
+  text-align: start;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.branch-row {
+  display: flex;
+  align-items: center;
+  padding-inline-start: 12px;
+}
+
+.branch-row input[type="checkbox"],
+.branch-group-checkbox {
+  appearance: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 13px;
+  block-size: 13px;
+  margin: 0 calc((var(--ref-tree-step) - 13px) / 2);
+  border: 1px solid color-mix(in srgb, var(--vscode-descriptionForeground, var(--vscode-foreground)) 25%, transparent);
+  border-radius: 2px;
+  color: var(--vscode-sideBar-foreground, var(--vscode-foreground));
+  background: transparent;
+  cursor: pointer;
+}
+
+:is(.branch-row input[type="checkbox"], .branch-group-checkbox):focus-visible {
+  outline-offset: 1px;
+}
+
+:is(.branch-row input[type="checkbox"], .branch-group-checkbox):checked:not(:indeterminate)::before {
+  content: '';
+  inline-size: 3px;
+  block-size: 6px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.branch-group-checkbox:indeterminate::before {
+  content: '';
+  inline-size: 7px;
+  border-block-start: 2px solid currentColor;
+}
+
+.branch-group-checkbox:disabled { cursor: default; }
+
+.branch-row .ref {
+  flex: 1;
+  min-width: 0;
+  padding-inline-start: 0;
+}
+
+.branch-divergence {
+  display: inline-flex;
+  flex: none;
+  gap: 3px;
+  margin-inline-start: 5px;
+}
+
+.branch-distance {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding-inline: 3px 4px;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+}
+
+.branch-distance.ahead { color: var(--vscode-charts-green, var(--vscode-foreground)); }
+.branch-distance.behind { color: var(--vscode-charts-blue, var(--vscode-foreground)); }
+
+.branch-distance::before {
+  content: '';
+  inline-size: 11px;
+  block-size: 11px;
+  background: currentColor;
+  clip-path: polygon(50% 5%, 96% 50%, 68% 50%, 68% 95%, 32% 95%, 32% 50%, 4% 50%);
+}
+
+.branch-distance.behind::before { transform: rotate(180deg); }
+
+summary:where(:not(.ref-group > summary)):hover, .ref:enabled:hover {
+  color: var(--vscode-list-hoverForeground, inherit);
+  background: var(--vscode-list-hoverBackground);
+}
+
+.ref:disabled { cursor: default; }
+.branch-row[data-vscode-context] .ref:disabled { pointer-events: none; }
+
+.ref[aria-current="true"] {
+  color: var(--vscode-list-inactiveSelectionForeground, inherit);
+  background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.local-only-tag {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  inline-size: 12px;
+  block-size: 9px;
+  margin-inline-start: 6px;
+  margin-block-end: 2px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+
+.local-only-tag::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline: 2px;
+  block-size: 2px;
+  border-block-end: 1px solid currentColor;
+}
+
+.fetch-toolbar {
+  display: flex;
+  padding: 5px 8px 7px 12px;
+}
+
+.fetch-button {
+  min-width: 26px;
+  min-height: 24px;
+  padding: 3px 4px;
+  color: var(--vscode-icon-foreground, var(--vscode-foreground));
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+}
+
+.fetch-button:hover { background: var(--vscode-toolbar-hoverBackground); }
+
+.fetch-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  background-color: currentColor;
+  mask: url("git-fetch.svg") center / contain no-repeat;
+}
+
+#status, #diff-files-status, .hint {
+  color: var(--vscode-descriptionForeground);
+  margin: 8px 12px;
+}
