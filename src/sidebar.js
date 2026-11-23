@@ -65,7 +65,7 @@ async function selectRepository(api) {
 
 class SidebarView {
   constructor(extensionUri, api, output, branchFilter, {
-    workspaceState, onShowGraph, onFilterChanged, onOpenFileDiff,
+    workspaceState, onShowGraph, onFilterChanged, onOpenFileDiff, onOpenWorkingFile,
   }) {
     this.extensionUri = extensionUri;
     this.api = api;
@@ -75,6 +75,7 @@ class SidebarView {
     this.onShowGraph = onShowGraph;
     this.onFilterChanged = onFilterChanged;
     this.onOpenFileDiff = onOpenFileDiff;
+    this.onOpenWorkingFile = onOpenWorkingFile;
     this.refsByRoot = new Map();
     this.refRequests = new Map();
     this.repositorySnapshots = new Map();
@@ -229,6 +230,7 @@ class SidebarView {
         void this.refresh();
       }
       if (message?.type === 'openFileDiff') return this.onOpenFileDiff(message);
+      if (message?.type === 'openWorkingFile') return this.onOpenWorkingFile(message);
       if (message?.type === 'changedFilesMode' && (message.mode === 'list' || message.mode === 'tree')) {
         return this.workspaceState.update(changedFilesModeKey, message.mode);
       }

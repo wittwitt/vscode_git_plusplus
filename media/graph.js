@@ -73,12 +73,13 @@ function enableColumnResize(table, vscode) {
   const sizes = [
     { key: 'graph', width: 100, min: 52 },
     { key: 'message', width: null, min: 100 },
+    { key: 'author', width: 70, min: 70 },
     { key: 'time', width: 150, min: 125 },
     { key: 'hash', width: 90, min: 68 },
   ];
   const saved = vscode.getState()?.columnWidths;
   const savedByColumn = Array.isArray(saved)
-    ? { graph: saved[0], message: saved[1], time: saved[3], hash: saved[4] }
+    ? { graph: saved[0], message: saved[1], author: saved[2], time: saved[3], hash: saved[4] }
     : saved;
   const overrides = sizes.map(({ key, min }) => {
     const width = savedByColumn?.[key];
@@ -576,8 +577,7 @@ function startWebview() {
       });
       const message = document.createElement('span');
       message.className = 'subject';
-      const subject = commit.subject || '(No commit message)';
-      message.textContent = commit.author ? `[${commit.author}] ${subject}` : subject;
+      message.textContent = commit.subject || '(No commit message)';
       message.title = `${message.textContent}\n${commit.hash}`;
       summary.append(message);
       if (refs) {
@@ -586,7 +586,8 @@ function startWebview() {
         for (const ref of refs) {
           const label = document.createElement('span');
           label.className = `ref ${ref.group}`;
-          if (ref.color) label.style.borderColor = ref.color;
+          if (ref.color) label.style.setProperty('--branch-color', ref.color);
+          if (ref.current && ref.group === 'heads') label.classList.add('current-branch');
           label.textContent = ref.current ? `✓ ${ref.name}` : ref.name;
           if (ref.group === 'tags') addTagTooltip(label, ref, commit.date);
           else label.title = ref.fullName;
@@ -595,6 +596,10 @@ function startWebview() {
         summary.append(decorations);
       }
 
+      const author = row.insertCell();
+      author.className = 'author';
+      author.textContent = commit.author || '—';
+      if (commit.author) author.title = commit.author;
       const date = row.insertCell();
       date.className = 'date';
       const time = document.createElement('time');

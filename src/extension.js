@@ -2,7 +2,7 @@
 
 const vscode = require('vscode');
 const { randomBytes } = require('node:crypto');
-const { basename } = require('node:path');
+const { basename, join } = require('node:path');
 const {
   pageSize, readRefs, openHistory, readCommitDiff, readCommitFiles, readCommitFileDiff,
   readCommitFileComparison, readCommitFileVersion,
@@ -531,6 +531,31 @@ class GraphView {
     return this.fileOperation;
   }
 
+  async openWorkingFile({ request, index } = {}) {
+    const preview = this.diffPreview;
+    if (!preview || preview.request !== request || !Number.isInteger(index)) return;
+    const file = preview.files?.[index];
+    if (!file) return;
+    const uri = vscode.Uri.file(join(preview.root, file.path));
+    try {
+      const { type } = await vscode.workspace.fs.stat(uri);
+      if (this.diffPreview !== preview) return;
+      if (!(type & vscode.FileType.File)) {
+        void vscode.window.showInformationMessage(`"${file.path}" is not a file in the working tree.`);
+        return;
+      }
+      await vscode.commands.executeCommand('vscode.open', uri, { preview: false });
+    } catch (error) {
+      if (this.diffPreview !== preview) return;
+      if (error.code === 'FileNotFound') {
+        void vscode.window.showInformationMessage(`"${file.path}" does not exist in the working tree.`);
+        return;
+      }
+      this.output.appendLine(`${preview.root}: Could not open ${file.path}: ${error.message}`);
+      void vscode.window.showErrorMessage('Could not open the working tree file. See Git ++ in the Output panel.');
+    }
+  }
+
   async resolveSelection(root, fullName, refs, branches, signal) {
     if (!fullName) return {};
     if (!fullName.startsWith('refs/tags/')) {
@@ -594,18 +619,19 @@ function webviewHtml(webview, media) {
     <p id="status" role="status">Loading commit history...</p>
     <main id="history" aria-label="Commit history" hidden>
       <table id="commit-table">
-        <colgroup><col><col><col><col></colgroup>
+        <colgroup><col><col><col><col><col></colgroup>
         <thead>
           <tr>
             <th id="lane-header" class="lane" scope="col">Graph</th>
             <th scope="col">Commit</th>
+            <th scope="col">Author</th>
             <th class="date" scope="col">Time</th>
             <th class="hash" scope="col">Commit</th>
           </tr>
         </thead>
         <tbody id="commits"></tbody>
         <tfoot id="pagination" hidden>
-          <tr><td colspan="4"><span id="page-loading" role="status" hidden>Loading older commits...</span></td></tr>
+          <tr><td colspan="5"><span id="page-loading" role="status" hidden>Loading older commits...</span></td></tr>
         </tfoot>
       </table>
     </main>
@@ -666,6 +692,7 @@ async function activate(context) {
       onShowGraph: () => graph.show((activeRepository() ?? api.repositories[0])?.rootUri.fsPath),
       onFilterChanged: root => graph.filterChanged(root),
       onOpenFileDiff: message => graph.openFileDiff(message),
+      onOpenWorkingFile: message => graph.openWorkingFile(message),
     },
   );
   const graph = new GraphView(context.extensionUri, api.git, output, branchFilter, branchColors, sidebar, context.workspaceState, refresh);

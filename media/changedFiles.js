@@ -14,7 +14,7 @@ function createChangedFiles(vscode) {
   let selectedIndex;
   let selectedButton;
 
-  function fileButton(file, index, label) {
+  function fileRow(file, index, label) {
     const fileRequest = displayedRequest;
     const button = document.createElement('button');
     button.type = 'button';
@@ -40,7 +40,21 @@ function createChangedFiles(vscode) {
       button.setAttribute('aria-current', 'true');
       vscode.postMessage({ type: 'openFileDiff', request: fileRequest, index });
     });
-    return button;
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'diff-file-open';
+    open.title = 'Open File in Editor';
+    open.setAttribute('aria-label', `Open ${file.path} in Editor`);
+    open.textContent = '↗';
+    open.addEventListener('click', () => {
+      if (fileRequest !== request) return;
+      vscode.postMessage({ type: 'openWorkingFile', request: fileRequest, index });
+    });
+
+    const row = document.createElement('div');
+    row.className = 'diff-file-row';
+    row.append(button, open);
+    return row;
   }
 
   function fileTree() {
@@ -71,7 +85,7 @@ function createChangedFiles(vscode) {
         details.append(summary, children);
         content.append(details);
       }
-      for (const { file, index, name } of files) content.append(fileButton(file, index, name));
+      for (const { file, index, name } of files) content.append(fileRow(file, index, name));
       return content;
     }
     return renderFolder(root);
@@ -83,7 +97,7 @@ function createChangedFiles(vscode) {
     selectedButton = undefined;
     const content = document.createDocumentFragment();
     if (mode === 'tree') content.append(fileTree());
-    else files.forEach((file, index) => content.append(fileButton(file, index)));
+    else files.forEach((file, index) => content.append(fileRow(file, index)));
     list.replaceChildren(content);
   }
 

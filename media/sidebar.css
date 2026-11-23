@@ -127,6 +127,21 @@ body {
 .diff-tree-branches { stroke: var(--vscode-charts-foreground, currentColor); }
 .diff-tree-files { stroke: var(--vscode-charts-green, currentColor); }
 
+.diff-file-row { display: flex; align-items: stretch; }
+.diff-file-row .ref { flex: 1; min-width: 0; }
+
+.diff-file-open {
+  flex: none;
+  inline-size: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  color: var(--vscode-icon-foreground, var(--vscode-foreground));
+  background: transparent;
+}
+
+.diff-file-open:hover { background: var(--vscode-toolbar-hoverBackground); }
+
 .diff-file-status {
   flex: none;
   min-width: 1em;

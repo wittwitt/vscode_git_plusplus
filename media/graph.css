@@ -333,6 +333,21 @@ td.lane {
   color: var(--vscode-descriptionForeground);
 }
 
+.ref:is(.heads, .remotes) {
+  --branch-accent: var(--branch-color, var(--vscode-charts-blue));
+  padding: 1px 6px;
+  border-color: var(--vscode-contrastBorder, var(--branch-accent));
+  border-inline-start-width: 3px;
+  background: color-mix(in srgb, var(--branch-accent) 16%, var(--vscode-editor-background));
+  color: var(--vscode-editor-foreground);
+  font-weight: 600;
+}
+
+.ref.heads.current-branch {
+  background: color-mix(in srgb, var(--branch-accent) 26%, var(--vscode-editor-background));
+  font-weight: 700;
+}
+
 .ref.tags { color: var(--vscode-charts-orange); }
 
 #tag-tooltip {
@@ -351,9 +366,14 @@ td.lane {
   overflow-wrap: anywhere;
 }
 
-td.date, td.hash {
+td.author, td.date, td.hash {
   vertical-align: middle;
   color: var(--vscode-descriptionForeground);
+}
+
+td.author {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .date time, .hash code {

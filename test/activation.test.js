@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const { EventEmitter } = require('node:events');
 const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = require('node:fs');
+const { stat } = require('node:fs/promises');
 const Module = require('node:module');
 const { tmpdir } = require('node:os');
 const { join } = require('node:path');
@@ -55,6 +56,7 @@ test('activates with Git CLI when the built-in Git extension has no model', asyn
   const information = [];
   const quickPicks = [];
   const errors = [];
+  const openedFiles = [];
   let warningChoice;
   let informationChoice;
   let remoteChoice;
@@ -99,9 +101,14 @@ test('activates with Git CLI when the built-in Git extension has no model', asyn
       dispose() { this.emitter.removeAllListeners(); }
     },
     RelativePattern: class {},
+    FileType: { File: 1, Directory: 2 },
     Uri: { file: fsPath => ({ scheme: 'file', fsPath }), from: value => value, joinPath: join },
     ViewColumn: { Active: -1 },
     workspace: {
+      fs: { async stat(uri) {
+        const entry = await stat(uri.fsPath);
+        return { type: entry.isFile() ? host.FileType.File : host.FileType.Directory };
+      } },
       workspaceFolders: [{ uri: rootUri }],
       textDocuments: [],
       getConfiguration: () => ({ get: () => undefined }),
@@ -136,6 +143,8 @@ test('activates with Git CLI when the built-in Git extension has no model', asyn
           belowGroup.tabs = [...belowGroup.tabs.filter(tab => !tab.isPreview), { input: { original, modified }, isPreview: options.preview }];
           const [before, after] = await Promise.all(args.slice(0, 2).map(uri => diffProvider.provideTextDocumentContent(uri)));
           messages.emit('nativeDiff', { original, modified, title, options, before, after });
+        } else if (name === 'vscode.open') {
+          openedFiles.push(args);
         } else return commands.get(name)(...args);
       },
     },
@@ -327,6 +336,8 @@ test('activates with Git CLI when the built-in Git extension has no model', asyn
   assert.equal(diff.options.preview, true);
   await sidebarMessage({ type: 'changedFilesMode', mode: 'tree' });
   assert.equal(settings.get('gitPlusPlus.diffFileMode'), 'tree');
+  await sidebarMessage({ type: 'openWorkingFile', index: 0, request: files.request });
+  assert.deepEqual(openedFiles, [[host.Uri.file(join(repositoryRoot, 'config', 'settings.yaml')), { preview: false }]]);
   const yaml = await openFile(0);
   assert.equal(yaml.after, 'enabled: true\n');
   assert.equal(yaml.modified.path, '/config/settings.yaml');
@@ -345,6 +356,8 @@ test('activates with Git CLI when the built-in Git extension has no model', asyn
   await oldDiffClosed;
   assert.deepEqual(emptyCommit.files, []);
   await sidebarMessage({ type: 'openFileDiff', index: 0, request: files.request });
+  await sidebarMessage({ type: 'openWorkingFile', index: 0, request: files.request });
+  assert.equal(openedFiles.length, 1);
   assert.equal(belowGroup, undefined);
 
   const { commit: selected } = await selectCommit(base);
