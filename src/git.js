@@ -56,6 +56,7 @@ async function readRefs(root, gitPath, signal) {
       group: namespace,
       author: tagger || peeledAuthor || author || '',
       authorSource: tagger ? 'Tag creator' : 'Commit author',
+      tagger: tagger || undefined,
       taggerDate: taggerDate || undefined,
       current: head === '*',
       hash: type === 'commit' ? hash : peeledType === 'commit' ? peeledHash : undefined,

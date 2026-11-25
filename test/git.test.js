@@ -127,6 +127,8 @@ test('reads an empty repository and a merged history with branches and tags', as
     ['release/v2.0', 'Release Bot', feature],
   ]);
   const [lightweight, annotated] = releaseTags;
+  assert.equal(lightweight.ref.tagger, undefined);
+  assert.equal(annotated.ref.tagger, 'Release Bot');
   assert.equal(lightweight.ref.taggerDate, undefined);
   assert.equal(annotated.ref.taggerDate, git('for-each-ref', '--format=%(taggerdate:iso-strict)', annotated.ref.fullName));
   assert.equal(await resolveCommit(root, 'git', 'refs/tags/release/v2.0'), feature);

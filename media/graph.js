@@ -413,7 +413,7 @@ function startWebview() {
   function addTagTooltip(label, ref, commitDate) {
     label.tabIndex = 0;
     label.setAttribute('aria-describedby', tagTooltip.id);
-    const author = ref.author || '—';
+    const author = ref.tagger || '—';
     const publishDate = ref.taggerDate || commitDate;
     const publish = publishDate ? formatCommitTime(publishDate, '') : '—';
     function show() {
