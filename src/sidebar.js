@@ -342,6 +342,7 @@ class SidebarView {
     if (branch.current || this.isRunning(root)) return;
 
     const deleting = operation === 'delete';
+    const { path: gitPath } = this.api.git;
     this.starting.add(root);
     try {
       if (deleting) {
@@ -351,8 +352,8 @@ class SidebarView {
         if (choice !== 'Delete Branch' ||
             !this.api.repositories.some(repository => repository.rootUri.fsPath === root)) return;
       }
-      const args = deleting ? ['branch', '-d', '--', branch.name] : ['switch', '--no-guess', '--', branch.name];
-      await git(root, this.api.git.path, args);
+      if (deleting) return await this.deleteLocalBranch(root, gitPath, branch);
+      await git(root, gitPath, ['switch', '--no-guess', '--', branch.name]);
       return true;
     } catch (error) {
       const action = deleting ? 'delete' : 'switch to';
@@ -360,6 +361,34 @@ class SidebarView {
     } finally {
       this.starting.delete(root);
     }
+  }
+
+  async deleteLocalBranch(root, gitPath, branch) {
+    try {
+      // Git provides no distinct exit code for an unmerged branch.
+      await git(root, gitPath, ['branch', '-d', '--', branch.name], undefined, undefined,
+        { env: { ...process.env, LC_ALL: 'C' } });
+    } catch (error) {
+      const unmerged = `error: the branch '${branch.name}' is not fully merged`;
+      const lines = error.stderr?.split(/\r?\n/) ?? [];
+      if (error.code !== 1 || !lines.some(line =>
+        line.replace(/^error: The branch /, 'error: the branch ').replace(/\.$/, '') === unmerged)) {
+        throw error;
+      }
+
+      const choice = await vscode.window.showWarningMessage(
+        `Force delete local branch "${branch.name}"?`,
+        { modal: true, detail: 'The branch is not fully merged. Deleting it may make its unmerged commits hard to recover.' },
+        'Force Delete Branch',
+      );
+      if (choice !== 'Force Delete Branch' ||
+          !this.api.repositories.some(repository => repository.rootUri.fsPath === root)) return false;
+
+      const tip = await git(root, gitPath, ['rev-parse', '--verify', '--end-of-options', branch.fullName]);
+      if (tip.trim() !== branch.hash) throw new Error('The branch changed. Refresh the branch list and try again.');
+      await git(root, gitPath, ['branch', '-D', '--', branch.name]);
+    }
+    return true;
   }
 
   async changeRemoteBranch(context, operation) {

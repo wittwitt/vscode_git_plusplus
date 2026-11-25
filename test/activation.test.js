@@ -155,7 +155,7 @@ test('activates with Git CLI when the built-in Git extension has no model', asyn
       },
       async showWarningMessage(message, options, ...actions) {
         warnings.push({ message, options, actions });
-        return warningChoice;
+        return typeof warningChoice === 'function' ? warningChoice(actions) : warningChoice;
       },
       async showQuickPick(items, options) {
         quickPicks.push({ items, options });
@@ -513,14 +513,33 @@ test('activates with Git CLI when the built-in Git extension has no model', asyn
   assert.ok(localBranches().includes('main'));
   warningChoice = 'Delete Branch';
   await deleteBranch(main);
-  assert.equal(errors.length, 1);
-  assert.match(errors[0], /^Could not delete "main":/);
+  assert.equal(warnings.at(-1).message, 'Force delete local branch "main"?');
+  assert.equal(warnings.at(-1).options.modal, true);
+  assert.deepEqual(warnings.at(-1).actions, ['Force Delete Branch']);
+  assert.equal(errors.length, 0);
   assert.ok(localBranches().includes('main'));
 
   await refreshAfter(() => switchBranch(main));
-  const [refreshed] = await refreshAfter(() => deleteBranch(feature));
+  await refreshAfter(() => deleteBranch(feature));
   assert.equal(currentBranch(), 'main');
   assert.ok(!localBranches().includes('feature/ui'));
+
+  const worktree = join(root, 'linked-worktree');
+  git('worktree', 'add', '-q', worktree, 'side');
+  const warningCount = warnings.length;
+  await deleteBranch(branchContext('refs/heads/side'));
+  assert.equal(warnings.length, warningCount + 1);
+  assert.match(errors.at(-1), /^Could not delete "side":/);
+  assert.ok(localBranches().includes('side'));
+  git('worktree', 'remove', worktree);
+
+  git('config', 'advice.forceDeleteBranch', 'false');
+  warningChoice = actions => actions[0];
+  const unmergedBranch = branchContext('refs/heads/unmerged');
+  const [refreshed, afterForceDelete] = await refreshAfter(() => deleteBranch(unmergedBranch));
+  assert.equal(warnings.at(-1).message, 'Force delete local branch "unmerged"?');
+  assert.ok(!localBranches().includes('unmerged'));
+  assert.ok(!afterForceDelete.repositories[0].groups[0].children.some(node => node.label === 'unmerged'));
 
   const commitMenus = contributes.menus['webview/context'].filter(item => item.when.includes('gitPlusPlus.graph'));
   assert.deepEqual(commitMenus.map(({ command, group }) => [command, group]), [
