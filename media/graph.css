@@ -53,7 +53,7 @@ header {
 #commit-search:focus-visible { outline: 1px solid var(--vscode-focusBorder); }
 #commit-search::placeholder { color: var(--vscode-input-placeholderForeground); }
 
-.merge-filter {
+.graph-option {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -63,7 +63,7 @@ header {
   user-select: none;
 }
 
-.merge-filter input {
+.graph-option input {
   margin: 0;
   accent-color: var(--vscode-button-background);
   cursor: pointer;

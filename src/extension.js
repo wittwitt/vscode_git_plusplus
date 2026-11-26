@@ -599,11 +599,14 @@ function webviewHtml(webview, media) {
   <header id="graph-toolbar">
     <div class="search-area">
       <input id="commit-search" type="search" placeholder="Search commit messages or hashes" aria-label="Search commit messages or hashes" />
-      <label class="merge-filter" title="Show only merge commits">
+      <label class="graph-option" title="Show only merge commits">
         <input id="merges-only" type="checkbox" disabled /> merges
       </label>
-      <label class="merge-filter" title="Follow only the first parent of each merge commit">
+      <label class="graph-option" title="Follow only the first parent of each merge commit">
         <input id="first-parent" type="checkbox" disabled /> first-parent
+      </label>
+      <label class="graph-option" title="Draw graph lines with straight segments">
+        <input id="polyline" type="checkbox" /> Polyline
       </label>
       <span id="search-status" role="status"></span>
       <span id="scope"></span>

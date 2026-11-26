@@ -305,6 +305,8 @@ function startWebview() {
     firstParent: document.getElementById('first-parent'),
     mergesOnly: document.getElementById('merges-only'),
   };
+  const polyline = document.getElementById('polyline');
+  polyline.checked = vscode.getState()?.polyline === true;
   const searchStatus = document.getElementById('search-status');
   const scope = document.getElementById('scope');
   const status = document.getElementById('status');
@@ -347,6 +349,13 @@ function startWebview() {
       vscode.postMessage({ type, checked: checkbox.checked, commitContext });
     });
   }
+  polyline.addEventListener('change', () => {
+    const { checked } = polyline;
+    vscode.setState({ ...vscode.getState(), polyline: checked });
+    for (const path of tbody.querySelectorAll('path[data-polyline]')) {
+      path.setAttribute('d', checked ? path.dataset.polyline : path.dataset.curve);
+    }
+  });
   all.addEventListener('click', () => message('all'));
   refresh.addEventListener('click', () => message('refresh'));
   searchInput.addEventListener('input', event => {
@@ -489,12 +498,26 @@ function startWebview() {
     const tail = svgElement('svg', {
       class: 'lane-tail', width, viewBox: `0 0 ${width} 16`, preserveAspectRatio: 'none', 'aria-hidden': 'true',
     });
-    function edge(svg, d, color) {
-      svg.append(svgElement('path', { d, stroke: color }));
+    function edge(svg, d, color, attributes) {
+      svg.append(svgElement('path', { d, stroke: color, ...attributes }));
     }
     layout.incoming.forEach((lane, index) => edge(node, `M ${laneX(index)} 0 V ${center}`, lane.color));
     for (const { from, to, color } of layout.edges) {
-      edge(tail, `M ${laneX(from)} 0 C ${laneX(from)} 8 ${laneX(to)} 8 ${laneX(to)} 16`, color);
+      const source = laneX(from);
+      const target = laneX(to);
+      const start = `M ${source} 0`;
+      if (from === to) {
+        edge(tail, `${start} V 16`, color);
+        continue;
+      }
+      const fromCommit = from === layout.column;
+      const curve = fromCommit
+        ? `${start} Q ${target} 0 ${target} 16`
+        : `${start} C ${source} 8 ${target} 8 ${target} 16`;
+      const segments = `${start}${fromCommit ? '' : ' V 4'} L ${target} 12 V 16`;
+      edge(tail, polyline.checked ? segments : curve, color, {
+        'data-polyline': segments, 'data-curve': curve,
+      });
     }
     node.append(svgElement('circle', {
       cx: laneX(layout.column), cy: center, r: 4.4,
