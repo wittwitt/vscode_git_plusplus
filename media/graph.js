@@ -52,6 +52,14 @@ function graphLayout(refs, scopeColor, firstParent, visible, missingParents) {
       parents.push(pending.get(hash));
     }
     const outgoing = [...continuing.slice(0, column), ...added, ...continuing.slice(column)];
+    if (parents.length > 1) {
+      // Reuse the parents' columns in Git order, including lanes already in progress.
+      const parentLanes = new Set(parents);
+      const orderedParents = parentLanes.values();
+      for (const [index, lane] of outgoing.entries()) {
+        if (parentLanes.has(lane)) outgoing[index] = orderedParents.next().value;
+      }
+    }
     const destination = new Map(outgoing.map((lane, index) => [lane, index]));
     const edges = lanes.flatMap((lane, from) => {
       if (lane === current) {

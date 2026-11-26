@@ -333,6 +333,20 @@ test('draws both merge edges and joins both lanes at the shared ancestor', () =>
   assert.deepEqual(filteredParent.edges, []);
 });
 
+test('orders merge edges by parent order when a parent already has a lane', () => {
+  const commits = [
+    { hash: 'tip', parents: ['feature', 'other', 'merge'] },
+    { hash: 'merge', parents: ['main', 'feature', 'third'] },
+    { hash: 'third', parents: [] },
+  ];
+  const [, merge, third] = layoutGraph(commits);
+  assert.deepEqual(merge.edges.filter(edge => edge.from === merge.column).map(edge => edge.to), [0, 2, 3]);
+  assert.deepEqual(merge.edges.filter(edge => edge.from !== merge.column).map(edge => [edge.from, edge.to]), [
+    [0, 2], [1, 1],
+  ]);
+  assert.deepEqual(third.incoming.map(lane => lane.hash), ['main', 'other', 'feature', 'third']);
+});
+
 test('remembers branch colors across ref changes and workspace reloads', () => {
   const stored = new Map();
   const storage = {
