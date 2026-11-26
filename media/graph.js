@@ -17,20 +17,32 @@ function layoutGraph(commits, refs = [], scopeColor, firstParent = false, merges
 }
 
 function graphLayout(refs, scopeColor, firstParent, visible, missingParents) {
-  const tipColors = new Map();
-  for (const { hash, color } of refs) {
-    if (hash && color && !tipColors.has(hash)) tipColors.set(hash, color);
+  const tipRefs = new Map();
+  for (const ref of refs) {
+    if (!ref.hash || !ref.color) continue;
+    const previous = tipRefs.get(ref.hash);
+    // Ref labels can be reordered by the sidebar filter.
+    if (!previous || ref.fullName < previous.fullName) tipRefs.set(ref.hash, ref);
   }
+  const tipColor = hash => tipRefs.get(hash)?.color;
   let lanes = [];
   let atStart = true;
   return commits => commits.map(commit => {
-    if (atStart && scopeColor && !tipColors.has(commit.hash)) tipColors.set(commit.hash, scopeColor);
+    const startColor = atStart ? scopeColor : undefined;
     atStart = false;
     const incoming = [...lanes];
+    const colorCounts = [0, 0, 0];
+    for (const lane of incoming) colorCounts[lane.paletteIndex]++;
+    function newLane(hash, color) {
+      // Give new lanes the least-used color among the active lanes.
+      const paletteIndex = colorCounts.indexOf(Math.min(...colorCounts));
+      colorCounts[paletteIndex]++;
+      return { hash, color, paletteIndex };
+    }
     let column = lanes.findIndex(lane => lane.hash === commit.hash);
     if (column < 0) {
       column = lanes.length;
-      lanes.push({ hash: commit.hash, color: tipColors.get(commit.hash) ?? unnamedLaneColor(commit.hash) });
+      lanes.push(newLane(commit.hash, tipColor(commit.hash) ?? startColor ?? unnamedLaneColor(commit.hash)));
     }
     const current = lanes[column];
     const continuing = lanes.filter(lane => lane !== current);
@@ -44,8 +56,7 @@ function graphLayout(refs, scopeColor, firstParent, visible, missingParents) {
         continue;
       }
       if (!pending.has(hash)) {
-        const color = tipColors.get(hash) ?? (index === 0 ? current.color : unnamedLaneColor(hash));
-        const lane = { hash, color };
+        const lane = index === 0 ? { ...current, hash } : newLane(hash, tipColor(hash) ?? unnamedLaneColor(hash));
         pending.set(hash, lane);
         added.push(lane);
       }
@@ -61,17 +72,16 @@ function graphLayout(refs, scopeColor, firstParent, visible, missingParents) {
       }
     }
     const destination = new Map(outgoing.map((lane, index) => [lane, index]));
+    const edge = (from, parent, { color, paletteIndex }) => ({ from, to: destination.get(parent), color, paletteIndex });
     const edges = lanes.flatMap((lane, from) => {
       if (lane === current) {
-        return parents.map(parent => ({
-          from, to: destination.get(parent), color: parent.color,
-        }));
+        return parents.map(parent => edge(from, parent, parent.hash === parentHashes[0] ? current : parent));
       }
-      return [{ from, to: destination.get(lane), color: lane.color }];
+      return [edge(from, lane, lane)];
     });
     const width = Math.max(lanes.length, outgoing.length);
     lanes = outgoing;
-    return { incoming, column, color: current.color, edges, width };
+    return { incoming, column, color: current.color, paletteIndex: current.paletteIndex, edges, width };
   });
 }
 
@@ -306,13 +316,17 @@ function startWebview() {
     mergesOnly: document.getElementById('merges-only'),
   };
   const polyline = document.getElementById('polyline');
-  polyline.checked = vscode.getState()?.polyline === true;
+  const savedState = vscode.getState();
+  polyline.checked = savedState?.polyline === true;
   const searchStatus = document.getElementById('search-status');
   const scope = document.getElementById('scope');
   const status = document.getElementById('status');
   const history = document.getElementById('history');
   const table = document.getElementById('commit-table');
   const tbody = document.getElementById('commits');
+  const threeColors = document.getElementById('three-colors');
+  threeColors.checked = (savedState?.threeColors ?? savedState?.singleColor) === true;
+  tbody.classList.toggle('three-colors', threeColors.checked);
   const pagination = document.getElementById('pagination');
   const pageLoading = document.getElementById('page-loading');
   const tagTooltip = document.getElementById('tag-tooltip');
@@ -355,6 +369,11 @@ function startWebview() {
     for (const path of tbody.querySelectorAll('path[data-polyline]')) {
       path.setAttribute('d', checked ? path.dataset.polyline : path.dataset.curve);
     }
+  });
+  threeColors.addEventListener('change', () => {
+    const { checked } = threeColors;
+    tbody.classList.toggle('three-colors', checked);
+    vscode.setState({ ...vscode.getState(), threeColors: checked });
   });
   all.addEventListener('click', () => message('all'));
   refresh.addEventListener('click', () => message('refresh'));
@@ -498,16 +517,18 @@ function startWebview() {
     const tail = svgElement('svg', {
       class: 'lane-tail', width, viewBox: `0 0 ${width} 16`, preserveAspectRatio: 'none', 'aria-hidden': 'true',
     });
-    function edge(svg, d, color, attributes) {
-      svg.append(svgElement('path', { d, stroke: color, ...attributes }));
+    const graphColor = ({ color, paletteIndex }) => `var(--graph-color-${paletteIndex}, ${color})`;
+    function edge(svg, d, lane, attributes) {
+      svg.append(svgElement('path', { d, stroke: graphColor(lane), ...attributes }));
     }
-    layout.incoming.forEach((lane, index) => edge(node, `M ${laneX(index)} 0 V ${center}`, lane.color));
-    for (const { from, to, color } of layout.edges) {
+    layout.incoming.forEach((lane, index) => edge(node, `M ${laneX(index)} 0 V ${center}`, lane));
+    for (const connection of layout.edges) {
+      const { from, to } = connection;
       const source = laneX(from);
       const target = laneX(to);
       const start = `M ${source} 0`;
       if (from === to) {
-        edge(tail, `${start} V 16`, color);
+        edge(tail, `${start} V 16`, connection);
         continue;
       }
       const fromCommit = from === layout.column;
@@ -515,13 +536,13 @@ function startWebview() {
         ? `${start} Q ${target} 0 ${target} 16`
         : `${start} C ${source} 8 ${target} 8 ${target} 16`;
       const segments = `${start}${fromCommit ? '' : ' V 4'} L ${target} 12 V 16`;
-      edge(tail, polyline.checked ? segments : curve, color, {
+      edge(tail, polyline.checked ? segments : curve, connection, {
         'data-polyline': segments, 'data-curve': curve,
       });
     }
     node.append(svgElement('circle', {
       cx: laneX(layout.column), cy: center, r: 4.4,
-      fill: layout.color,
+      fill: graphColor(layout),
     }));
     return [tail, node];
   }

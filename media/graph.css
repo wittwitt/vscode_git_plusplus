@@ -297,6 +297,18 @@ td.lane {
 }
 .lane path { fill: none; stroke-width: 1.65; vector-effect: non-scaling-stroke; }
 .lane circle { stroke: var(--vscode-editor-background); stroke-width: 1.25; }
+.three-colors {
+  --graph-color-0: #54b8ff;
+  --graph-color-1: #f377c2;
+  --graph-color-2: #ffb34f;
+}
+
+.vscode-light .three-colors,
+.vscode-high-contrast-light .three-colors {
+  --graph-color-0: #0075d8;
+  --graph-color-1: #c73587;
+  --graph-color-2: #bd6500;
+}
 
 .summary { vertical-align: top; }
 

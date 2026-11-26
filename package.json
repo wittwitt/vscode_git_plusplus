@@ -2,7 +2,7 @@
   "name": "git-plus-plus",
   "displayName": "Git ++",
   "description": "Browse Git branches, tags, and commit history in VS Code.",
-  "version": "0.1.13",
+  "version": "0.1.16",
   "publisher": "wittwitt",
   "repository": {
     "type": "git",

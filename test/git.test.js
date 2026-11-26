@@ -393,3 +393,49 @@ test('keeps the named lane color when another branch is filtered or when history
   assert.deepEqual([...append([merge, feature]), ...append([main, base])],
     layoutGraph([merge, feature, main, base], [mainRef, featureRef]));
 });
+
+test('keeps the first-parent line color through older branch tips and up to a shared lane', () => {
+  const commits = [
+    { hash: 'merge', parents: ['main', 'feature'] },
+    { hash: 'main', parents: ['base'] },
+    { hash: 'feature', parents: ['base'] },
+    { hash: 'base', parents: [] },
+  ];
+  const mainColor = '#3b82d6';
+  const featureColor = '#dc7431';
+  const refs = [
+    { hash: 'merge', color: mainColor },
+    { hash: 'main', color: '#1399ab' },
+    { hash: 'feature', color: featureColor },
+  ];
+  const [merge, main, feature, base] = layoutGraph(commits, refs);
+  assert.deepEqual(merge.edges.map(edge => edge.color), [mainColor, featureColor]);
+  assert.equal(main.color, mainColor);
+  assert.equal(feature.edges.find(edge => edge.from === feature.column).color, featureColor);
+  assert.equal(base.color, mainColor);
+});
+
+test('picks the same lane color when refs at a shared tip are reordered', () => {
+  const commits = [{ hash: 'tip', parents: [] }];
+  const local = { hash: 'tip', fullName: 'refs/heads/main', color: '#3b82d6' };
+  const remote = { hash: 'tip', fullName: 'refs/remotes/origin/main', color: '#dc7431' };
+  assert.equal(layoutGraph(commits, [local, remote])[0].color, local.color);
+  assert.equal(layoutGraph(commits, [remote, local])[0].color, local.color);
+});
+
+test('reuses three palette colors while keeping each lane color across rows and pages', () => {
+  const commits = [
+    { hash: 'merge', parents: ['main', 'side-a', 'side-b', 'side-c'] },
+    { hash: 'side-a', parents: ['side-a-base'] },
+    { hash: 'side-a-base', parents: ['main'] },
+    { hash: 'side-b', parents: ['main'] },
+    { hash: 'side-c', parents: ['main'] },
+    { hash: 'main', parents: [] },
+  ];
+  const append = graphLayout([]);
+  const [merge] = append(commits.slice(0, 1));
+  const [sideA, sideABase, sideB, sideC, main] = append(commits.slice(1));
+  assert.deepEqual(merge.edges.map(edge => edge.paletteIndex), [0, 1, 2, 0]);
+  assert.deepEqual([sideA, sideABase, sideB, sideC, main].map(row => row.paletteIndex), [1, 1, 2, 0, 0]);
+  assert.equal(sideABase.edges.find(edge => edge.from === sideABase.column).paletteIndex, 1);
+});

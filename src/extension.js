@@ -608,6 +608,9 @@ function webviewHtml(webview, media) {
       <label class="graph-option" title="Draw graph lines with straight segments">
         <input id="polyline" type="checkbox" /> Polyline
       </label>
+      <label class="graph-option" title="Limit graph lines and commit dots to three colors">
+        <input id="three-colors" type="checkbox" /> 3 Colors
+      </label>
       <span id="search-status" role="status"></span>
       <span id="scope"></span>
     </div>
