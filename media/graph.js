@@ -77,6 +77,7 @@ function enableColumnResize(table, vscode) {
     { key: 'time', width: 150, min: 125 },
     { key: 'hash', width: 90, min: 68 },
   ];
+  const messageIndex = sizes.findIndex(({ key }) => key === 'message');
   const saved = vscode.getState()?.columnWidths;
   const savedByColumn = Array.isArray(saved)
     ? { graph: saved[0], message: saved[1], author: saved[2], time: saved[3], hash: saved[4] }
@@ -117,6 +118,13 @@ function enableColumnResize(table, vscode) {
     }
     function resize(width) {
       const resized = Math.max(min, Math.round(width));
+      if (overrides[messageIndex] === null) {
+        if (resized === currentWidth()) return;
+        if (index !== messageIndex) {
+          // Keep the current message width when switching from fill to fixed table width.
+          overrides[messageIndex] = Math.round(headers[messageIndex].getBoundingClientRect().width);
+        }
+      }
       overrides[index] = resized === defaultWidth ? null : resized;
       applyWidths();
       announceWidth(resized);
