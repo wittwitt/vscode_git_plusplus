@@ -89,6 +89,7 @@
     }
   },
   "scripts": {
+    "package": "npx --yes @vscode/vsce@4.1.1 package",
     "check": "node --check src/extension.js && node --check src/git.js && node --check src/gitRepositories.js && node --check src/branchFilter.js && node --check src/branchColors.js && node --check src/sidebar.js && node --check media/graph.js && node --check media/changedFiles.js && node --check media/sidebar.js",
     "test": "node --test"
   }
